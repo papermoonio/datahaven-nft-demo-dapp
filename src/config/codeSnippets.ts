@@ -120,7 +120,7 @@ export const mintSnippets: CodeSnippet[] = [
   {
     id: 'ensureBucket',
     title: 'Ensure Bucket',
-    tooltip: 'Creates your NFT storage bucket if it doesn\'t exist',
+    tooltip: "Creates your NFT storage bucket if it doesn't exist",
     code: `// src/operations/storageOperations.ts
 
 // Each user gets their own bucket for NFT assets
@@ -198,7 +198,7 @@ export async function uploadFileToDH(
   const fileBlob = await fileManager.getFileBlob();
   await mspClient.files.uploadFile(
     bucketId, fileKey.toHex(), fileBlob,
-    address, fileName
+    fingerprint.toHex(), address, fileName
   );
 
   return fileKey.toHex();

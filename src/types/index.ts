@@ -1,4 +1,11 @@
-import type { Bucket, FileListResponse, HealthStatus, InfoResponse, UserInfo, StorageFileInfo } from '@storagehub-sdk/msp-client';
+import type {
+  Bucket,
+  FileListResponse,
+  HealthStatus,
+  InfoResponse,
+  UserInfo,
+  StorageFileInfo,
+} from '@storagehub-sdk/msp-client';
 
 export type { Bucket, FileListResponse, HealthStatus, InfoResponse, UserInfo, StorageFileInfo };
 
@@ -30,8 +37,8 @@ export interface NFTMetadata {
 
 export interface MintedNFT {
   tokenId: number;
-  owner: string;
-  tokenURI: string; // DataHaven file key for the metadata JSON
+  owner: `0x${string}`;
+  tokenURI: `0x${string}`; // DataHaven file key for the metadata JSON
   metadata: NFTMetadata | null; // null if metadata fetch failed (e.g., file expired)
   imageUrl: string | null; // Public download URL, null if unavailable
 }
@@ -42,7 +49,7 @@ export type FileStatus = StorageFileInfo['status'];
 
 export interface FileConfirmation {
   label: string;
-  fileKey: string;
+  fileKey: `0x${string}`;
   status: FileStatus | null; // null = not yet polled / file not found
   error?: string;
 }

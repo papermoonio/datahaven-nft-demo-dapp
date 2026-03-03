@@ -151,7 +151,7 @@ export async function uploadFileToDH(
   // Extract peer IDs
   const peerIds: string[] = (multiaddresses ?? [])
     .map((addr: string) => addr.split('/p2p/').pop())
-    .filter((id): id is string => !!id);
+    .filter((id: string | undefined): id is string => !!id);
 
   if (peerIds.length === 0) {
     throw new Error('MSP multiaddresses had no /p2p/<peerId> segment');
@@ -187,7 +187,7 @@ export async function uploadFileToDH(
 
   // Verify storage request on chain
   const storageRequest = await polkadotApi.query.fileSystem.storageRequests(fileKey);
-  if (!storageRequest.isSome) {
+  if (!(storageRequest as any).isSome) {
     throw new Error('Storage request not found on chain');
   }
 
@@ -198,7 +198,14 @@ export async function uploadFileToDH(
 
   // Upload file to MSP
   const fileBlob = await fileManager.getFileBlob();
-  const uploadReceipt = await mspClient.files.uploadFile(bucketId, fileKey.toHex(), fileBlob, address, fileName);
+  const uploadReceipt = await mspClient.files.uploadFile(
+    bucketId as `0x${string}`,
+    fileKey.toHex(),
+    fileBlob,
+    fingerprint.toHex(),
+    address,
+    fileName
+  );
 
   if (uploadReceipt.status !== 'upload_successful') {
     throw new Error('File upload to MSP failed');
@@ -241,7 +248,10 @@ export async function waitForMSPConfirmOnChain(fileKey: string): Promise<void> {
 }
 
 // Wait for backend to mark file as ready
-export async function waitForBackendFileReady(bucketId: string, fileKey: string): Promise<StorageFileInfo> {
+export async function waitForBackendFileReady(
+  bucketId: `0x${string}`,
+  fileKey: `0x${string}`
+): Promise<StorageFileInfo> {
   const mspClient = getMspClient();
   const maxAttempts = 60;
   const delayMs = 5000;
@@ -276,7 +286,7 @@ export async function waitForBackendFileReady(bucketId: string, fileKey: string)
 
 // Check the current status of a file (single poll, not a loop)
 // Returns the SDK FileStatus directly, or null if file not yet indexed (404)
-export async function checkFileStatus(bucketId: string, fileKey: string): Promise<FileStatus | null> {
+export async function checkFileStatus(bucketId: `0x${string}`, fileKey: `0x${string}`): Promise<FileStatus | null> {
   const mspClient = await connectToMsp(); // lazy connect — fixes cases where MSP client isn't yet initialized
 
   // Ensure authenticated — getFileInfo requires auth
@@ -312,16 +322,16 @@ export async function checkFileStatus(bucketId: string, fileKey: string): Promis
 
 // Extract raw file key from a public download URL
 // e.g. "https://deo-dh-backend.testnet.datahaven-infra.network/download/0xabc..." → "0xabc..."
-export function extractFileKeyFromUrl(url: string): string {
+export function extractFileKeyFromUrl(url: string): `0x${string}` {
   const parts = url.split('/download/');
   if (parts.length < 2) {
     throw new Error(`Invalid download URL: ${url}`);
   }
-  return parts[1];
+  return parts[1] as `0x${string}`;
 }
 
 // Request deletion of a single file from DataHaven
-export async function requestDeleteFile(bucketId: string, fileKey: string): Promise<void> {
+export async function requestDeleteFile(bucketId: `0x${string}`, fileKey: `0x${string}`): Promise<void> {
   const mspClient = await connectToMsp();
   const storageHubClient = getStorageHubClient();
   const publicClient = getPublicClient();
@@ -341,9 +351,9 @@ export async function requestDeleteFile(bucketId: string, fileKey: string): Prom
 
 // Delete both NFT files (metadata + image) from DataHaven
 export async function deleteNftFiles(
-  ownerAddress: string,
-  metadataFileKey: string,
-  imageFileKey: string | null
+  ownerAddress: `0x${string}`,
+  metadataFileKey: `0x${string}`,
+  imageFileKey: `0x${string}` | null
 ): Promise<void> {
   const bucketId = await deriveBucketIdForAddress(ownerAddress);
   await requestDeleteFile(bucketId, metadataFileKey);
@@ -353,12 +363,12 @@ export async function deleteNftFiles(
 }
 
 // Derive the NFT bucket ID for a given owner address
-export async function deriveBucketIdForAddress(address: string): Promise<string> {
+export async function deriveBucketIdForAddress(address: `0x${string}`): Promise<`0x${string}`> {
   const storageHubClient = getStorageHubClient();
   const bucketName = getNftBucketName(address);
-  const bucketId = await storageHubClient.deriveBucketId(address as `0x${string}`, bucketName);
+  const bucketId = await storageHubClient.deriveBucketId(address, bucketName);
   if (!bucketId) {
     throw new Error(`deriveBucketId returned ${bucketId} for address ${address}`);
   }
-  return bucketId as string;
+  return bucketId as `0x${string}`;
 }
